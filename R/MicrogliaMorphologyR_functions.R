@@ -5,8 +5,7 @@
 #' @param dir is your directory containing the 'Hull and Circles Results.txt' file from FracLac output
 #' @export
 fraclac_tidying <- function(dir){
-  setwd(dir)
-  FracLac1 <- read.csv("Hull and Circle Results.txt", sep='\t')
+  FracLac1 <- read.csv(file.path(dir,"Hull and Circle Results.txt"), sep='\t')
   y <- FracLac1 %>%
     separate(1, into=c("Name","trash"), sep="tif_thresholdedtif_") %>%
     separate(trash, into=c("ID","trash1"), sep="tif") %>%
@@ -21,17 +20,17 @@ fraclac_tidying <- function(dir){
 #' @param dir is your directory containing all of your individual AnalyzeSkeleton .csv result files output from MicrogliaMorphology
 #' @export
 skeleton_tidying <- function(dir){
-  setwd(dir)
-  files <- list.files()
+  files <- list.files(dir,full=TRUE)
   nf = length(files)
   good = vector("list", nf)
-  for(i in 1:nf){
-    tmp = try(read.csv(files[i]))
-    if(inherits(tmp,"try-error")) next
-    tmp$Name=files[i]
-    if(nrow(tmp)==1)
-      good[[i]]=tmp
-  }
+  lapply(files,function(file){
+    tmp<-try(read.csv(file))
+    if(!inherits(tmp,"try-error")){
+      if(nrow(tmp)==1) return(tmp)
+    }
+    NULL
+  })->good
+  good[!sapply(good,is.null)]->good
   finaldf2 <- do.call(rbind,good)
 
   y <- finaldf2 %>%
